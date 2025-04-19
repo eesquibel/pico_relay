@@ -38,6 +38,7 @@ pico_sdk_init()
 add_executable(pico_relay
     sntp.c
     mqtt.c
+    home-assistant.c
     pico_relay.c
 )
 
@@ -61,6 +62,11 @@ target_link_libraries(pico_relay pico_cyw43_arch_lwip_threadsafe_background)
 target_link_libraries(pico_relay pico_lwip)
 target_link_libraries(pico_relay pico_lwip_mqtt)
 
+# json-maker library
+add_subdirectory(libs/json-maker)
+target_include_directories(pico_relay PRIVATE "./libs/json-maker/src/include")
+target_link_libraries(pico_relay json_maker)
+
 target_compile_definitions(pico_lwip_sntp INTERFACE
     SNTP_STARTUP_DELAY=0
     SNTP_SET_SYSTEM_TIME=sntp_set_system_time
@@ -78,8 +84,9 @@ set(MQTT_USERNAME "$ENV{MQTT_USERNAME}")
 set(MQTT_PASSWORD "$ENV{MQTT_PASSWORD}")
 
 # MQTT topics
-set(MQTT_PUBLISH_TOPIC "homeassistant/switch/${DEVICE_ID}/set")
-set(MQTT_SUBSCRIBE_TOPIC "homeassistant/switch/${DEVICE_ID}/state")
+set(MQTT_PUBLISH_TOPIC "homeassistant/valve/${DEVICE_ID}/set")
+set(MQTT_SUBSCRIBE_TOPIC "homeassistant/valve/${DEVICE_ID}/state")
+set(MQTT_CONFIG_TOPIC "homeassistant/valve/${DEVICE_ID}/config")
 
 # SNTP server
 # set(SNTP_SERVER "")
@@ -98,6 +105,7 @@ target_compile_definitions(pico_relay PRIVATE
     MQTT_PASSWORD="${MQTT_PASSWORD}"
     MQTT_PUBLISH_TOPIC="${MQTT_PUBLISH_TOPIC}"
     MQTT_SUBSCRIBE_TOPIC="${MQTT_SUBSCRIBE_TOPIC}"
+    MQTT_CONFIG_TOPIC="${MQTT_CONFIG_TOPIC}"
 )
 
 if(DEFINED SNTP_SERVER)

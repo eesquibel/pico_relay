@@ -6,4 +6,6 @@
 
 void mqtt_init(ip_addr_t *ip_addr);
 
+void mqtt_pub(const char *topic, const char *message);
+
 #endif

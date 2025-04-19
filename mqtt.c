@@ -88,3 +88,19 @@ void mqtt_init(ip_addr_t *ip_addr)
 {
     mqtt_connect(&static_client, ip_addr, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD);
 }
+
+void mqtt_pub(const char *topic, const char *message)
+{
+    err_t err;
+
+    err = mqtt_publish(&static_client, topic, message, strlen(message), 1, 0, NULL, 0);
+
+    if (err != ERR_OK)
+    {
+        printf("mqtt_publish return %d\n", err);
+    }
+    else
+    {
+        printf("mqtt_publish success\n");
+    }
+}

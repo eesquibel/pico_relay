@@ -10,6 +10,8 @@
 
 #include "pico_relay.h"
 #include "mqtt.h"
+#include "home-assistant.h"
+#include <pico/unique_id.h>
 
 int main()
 {
@@ -59,6 +61,33 @@ int main()
     printf("MQTT address %d.%d.%d.%d\n", ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
 
     mqtt_init(&broker_ip);
+
+    struct ha_discovery discovery = {
+        .device = &(struct ha_discovery_device){
+            .name = "Pico Relay",
+            .identifiers = malloc(2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1),
+        },
+        .name = "Pico Relay",
+        .device_class = "water",
+        .platform = "valve",
+        .availability_topic = "home/availability",
+    };
+
+    pico_get_unique_board_id_string(discovery.device->identifiers, sizeof(discovery.device->identifiers));
+
+    char* json_buffer = malloc(512);
+    if (json_buffer == NULL)
+    {
+        printf("Failed to allocate memory for JSON buffer\n");
+        return -1;
+    }
+    char* json_ptr = ha_discovery_json(json_buffer, &discovery);
+    printf("JSON: %s\n", json_buffer);
+
+    mqtt_pub(MQTT_CONFIG_TOPIC, json_buffer);
+
+    free(discovery.device->identifiers);
+    free(json_buffer);
 
     while (true)
     {
