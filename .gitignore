@@ -1,0 +1,5 @@
+.vscode
+build
+CMakeFiles
+generated
+pico-sdk
