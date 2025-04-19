@@ -6,6 +6,7 @@
 #include "pico/util/datetime.h"
 #include "pico/aon_timer.h"
 
+#ifdef SNTP_SERVER
 #include "sntp.h"
 
 void sntp_set_system_time(u32_t sec)
@@ -32,3 +33,4 @@ void sntp_set_system_time(u32_t sec)
            current_tm.tm_year + 1900, current_tm.tm_mon + 1, current_tm.tm_mday,
            current_tm.tm_hour, current_tm.tm_min, current_tm.tm_sec);
 }
+#endif

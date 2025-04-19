@@ -36,6 +36,7 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(pico_relay
+    sntp.c
     mqtt.c
     pico_relay.c
 )
@@ -59,35 +60,34 @@ target_include_directories(pico_relay PRIVATE
 target_link_libraries(pico_relay pico_cyw43_arch_lwip_threadsafe_background)
 target_link_libraries(pico_relay pico_lwip)
 target_link_libraries(pico_relay pico_lwip_mqtt)
-target_link_libraries(pico_relay pico_lwip_sntp)
-target_link_libraries(pico_relay pico_aon_timer)
 
 target_compile_definitions(pico_lwip_sntp INTERFACE
     SNTP_STARTUP_DELAY=0
     SNTP_SET_SYSTEM_TIME=sntp_set_system_time
 )
 
-target_precompile_headers(pico_lwip_sntp INTERFACE
-    "sntp.h"
-)
-
 set(DEVICE_ID "pico_relay_1")
 
 # WiFi credentials
-# set(WIFI_SSID "")
-# set(WIFI_PASSWORD "")
+set(WIFI_SSID "$ENV{WIFI_SSID}")
+set(WIFI_PASSWORD "$ENV{WIFI_PASSWORD}")
 
 # MQTT credentials
-# set(MQTT_BROKER "")
-# set(MQTT_USERNAME "")
-# set(MQTT_PASSWORD "")
+set(MQTT_BROKER "$ENV{MQTT_BROKER}")
+set(MQTT_USERNAME "$ENV{MQTT_USERNAME}")
+set(MQTT_PASSWORD "$ENV{MQTT_PASSWORD}")
 
 # MQTT topics
 set(MQTT_PUBLISH_TOPIC "homeassistant/switch/${DEVICE_ID}/set")
 set(MQTT_SUBSCRIBE_TOPIC "homeassistant/switch/${DEVICE_ID}/state")
 
 # SNTP server
-set(SNTP_SERVER "${MQTT_BROKER}")
+# set(SNTP_SERVER "")
+
+if(NOT DEFINED SNTP_SERVER AND DEFINED MQTT_BROKER)
+    message("Using MQTT broker for SNTP server: ${MQTT_BROKER}")
+    set(SNTP_SERVER "${MQTT_BROKER}")
+endif()
 
 target_compile_definitions(pico_relay PRIVATE
     DEVICE_ID="${DEVICE_ID}"
@@ -100,16 +100,19 @@ target_compile_definitions(pico_relay PRIVATE
     MQTT_SUBSCRIBE_TOPIC="${MQTT_SUBSCRIBE_TOPIC}"
 )
 
-if(DEFINED ENV{SNTP_SERVER})
-    message("Using SNTP server from environment variable: $ENV{SNTP_SERVER}")
-    
-    add_executable(pico_relay
-        mqtt.c
-    )
+if(DEFINED SNTP_SERVER)
+    message("Adding SNTP support, server: ${SNTP_SERVER}")
 
     target_compile_definitions(pico_relay PRIVATE
-        SNTP_SERVER="$ENV{SNTP_SERVER}"
+        SNTP_SERVER="${SNTP_SERVER}"
     )
+
+    target_precompile_headers(pico_lwip_sntp INTERFACE
+        "sntp.h"
+    )
+
+    target_link_libraries(pico_relay pico_lwip_sntp)
+    target_link_libraries(pico_relay pico_aon_timer)
 else()
     message("SNTP server not set, skipping support")
 endif()
