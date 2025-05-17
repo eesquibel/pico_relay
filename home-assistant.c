@@ -14,10 +14,12 @@ char *ha_discovery_json(char *dest, struct ha_discovery const *discovery)
 {
     dest = json_objOpen(dest, NULL, NULL);
     dest = ha_discovery_device_json(dest, discovery->device);
-    dest = json_nstr(dest, "name", discovery->name, -1, NULL);
+    dest = json_nstr(dest, "unique_id", discovery->unique_id, -1, NULL);
     dest = json_nstr(dest, "device_class", discovery->device_class, -1, NULL);
     dest = json_nstr(dest, "platform", discovery->platform, -1, NULL);
     dest = json_nstr(dest, "availability_topic", discovery->availability_topic, -1, NULL);
+    dest = json_nstr(dest, "command_topic", discovery->command_topic, -1, NULL);
+    dest = json_nstr(dest, "state_topic", discovery->state_topic, -1, NULL);
     dest = json_objClose(dest, NULL);
     dest = json_end(dest, NULL);
     return dest;

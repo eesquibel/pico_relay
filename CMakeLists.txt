@@ -39,6 +39,8 @@ add_executable(pico_relay
     sntp.c
     mqtt.c
     home-assistant.c
+    ha-commands.c
+    pico_led.c
     pico_relay.c
 )
 
@@ -46,8 +48,8 @@ pico_set_program_name(pico_relay "pico_relay")
 pico_set_program_version(pico_relay "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(pico_relay 1)
-# pico_enable_stdio_usb(pico_relay 1)
+# pico_enable_stdio_uart(pico_relay 1)
+pico_enable_stdio_usb(pico_relay 1)
 
 # Add the standard library to the build
 target_link_libraries(pico_relay pico_stdlib)
@@ -62,15 +64,14 @@ target_link_libraries(pico_relay pico_cyw43_arch_lwip_threadsafe_background)
 target_link_libraries(pico_relay pico_lwip)
 target_link_libraries(pico_relay pico_lwip_mqtt)
 
+target_compile_definitions(pico_lwip_mqtt INTERFACE
+    MQTT_OUTPUT_RINGBUF_SIZE=1024
+)
+
 # json-maker library
-add_subdirectory(libs/json-maker)
+add_subdirectory(libs/json-maker/src)
 target_include_directories(pico_relay PRIVATE "./libs/json-maker/src/include")
 target_link_libraries(pico_relay json_maker)
-
-target_compile_definitions(pico_lwip_sntp INTERFACE
-    SNTP_STARTUP_DELAY=0
-    SNTP_SET_SYSTEM_TIME=sntp_set_system_time
-)
 
 set(DEVICE_ID "pico_relay_1")
 
@@ -83,10 +84,11 @@ set(MQTT_BROKER "$ENV{MQTT_BROKER}")
 set(MQTT_USERNAME "$ENV{MQTT_USERNAME}")
 set(MQTT_PASSWORD "$ENV{MQTT_PASSWORD}")
 
-# MQTT topics
-set(MQTT_PUBLISH_TOPIC "homeassistant/valve/${DEVICE_ID}/set")
-set(MQTT_SUBSCRIBE_TOPIC "homeassistant/valve/${DEVICE_ID}/state")
-set(MQTT_CONFIG_TOPIC "homeassistant/valve/${DEVICE_ID}/config")
+# MQTT topic root
+set(MQTT_TOPIC_ROOT "homeassistant/valve/${DEVICE_ID}")
+
+# GPIO pin for relay
+set(RELAY_GPIO 0)
 
 # SNTP server
 # set(SNTP_SERVER "")
@@ -103,14 +105,18 @@ target_compile_definitions(pico_relay PRIVATE
     MQTT_BROKER="${MQTT_BROKER}"
     MQTT_USERNAME="${MQTT_USERNAME}"
     MQTT_PASSWORD="${MQTT_PASSWORD}"
-    MQTT_PUBLISH_TOPIC="${MQTT_PUBLISH_TOPIC}"
-    MQTT_SUBSCRIBE_TOPIC="${MQTT_SUBSCRIBE_TOPIC}"
-    MQTT_CONFIG_TOPIC="${MQTT_CONFIG_TOPIC}"
+    MQTT_TOPIC_ROOT="${MQTT_TOPIC_ROOT}"
+    RELAY_GPIO=${RELAY_GPIO}
 )
 
 if(DEFINED SNTP_SERVER)
     message("Adding SNTP support, server: ${SNTP_SERVER}")
-
+    
+    target_compile_definitions(pico_lwip_sntp INTERFACE
+        SNTP_STARTUP_DELAY=0
+        SNTP_SET_SYSTEM_TIME=sntp_set_system_time
+    )
+    
     target_compile_definitions(pico_relay PRIVATE
         SNTP_SERVER="${SNTP_SERVER}"
     )

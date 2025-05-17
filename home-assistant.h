@@ -8,10 +8,12 @@ struct ha_discovery_device {
 
 struct ha_discovery {
     struct ha_discovery_device *device;
-    char *name;
+    char *unique_id;
     char *device_class;
     char *platform;
     char *availability_topic;
+    char *command_topic;
+    char *state_topic;
 };
 
 char* ha_discovery_device_json(char* dest, struct ha_discovery_device const* device);
